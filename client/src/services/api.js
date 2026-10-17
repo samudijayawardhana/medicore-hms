@@ -140,7 +140,11 @@ export const api = {
     if (search) params.append('search', search);
     if (district && district !== 'All') params.append('district', district);
     if (includeInactive) params.append('includeInactive', 'true');
-    return request(`/patients?${params.toString()}`);
+    const res = await request(`/patients?${params.toString()}`);
+    const list = Array.isArray(res) ? res : (res?.data || []);
+    list.data = list;
+    list.total = res?.total ?? list.length;
+    return list;
   },
 
   async getPatient(id) {

@@ -70,6 +70,68 @@ function isViewAllowedForRole(role, view) {
   return allowed.includes(view);
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[MediCore React Error Boundary]:', error, errorInfo);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.viewKey !== this.props.viewKey && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '60px 24px', textAlign: 'center', maxWidth: '600px', margin: '40px auto' }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%',
+            backgroundColor: '#fee2e2', color: '#dc2626',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px auto'
+          }}>
+            <AlertTriangle size={32} />
+          </div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>
+            Unable to load module view
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '20px' }}>
+            {this.state.error?.message || 'A temporary display error occurred while rendering this section.'}
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="btn btn-secondary"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                if (this.props.onReset) this.props.onReset();
+              }}
+              className="btn btn-primary"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   // Session & User State
   const [currentUser, setCurrentUser] = useState(() => api.getStoredUser());
@@ -302,6 +364,7 @@ export default function App() {
         />
 
         <main style={{ flex: 1, minHeight: 'calc(100vh - 70px)', overflowY: 'auto' }}>
+          <ErrorBoundary viewKey={currentView} onReset={() => setCurrentView('dashboard')}>
           {!isViewAllowedForRole(currentRole, currentView) && (
             <div style={{ padding: '60px 24px', textAlign: 'center', maxWidth: '640px', margin: '40px auto' }}>
               <div
@@ -506,6 +569,7 @@ export default function App() {
               currentRole={currentRole}
             />
           )}
+          </ErrorBoundary>
         </main>
       </div>
 

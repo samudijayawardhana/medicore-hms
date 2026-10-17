@@ -38,7 +38,7 @@ export default function LoginView({ onLoginSuccess, onBackToWelcome }) {
 
   const handleSelectDemo = (acc) => {
     setUsername(acc.user);
-    setPassword('password123');
+    setPassword('');
     setErrorMsg('');
   };
 
@@ -151,7 +151,7 @@ export default function LoginView({ onLoginSuccess, onBackToWelcome }) {
             <div className="login-demo-bar">
               <div className="login-demo-label">
                 <KeyRound size={13} />
-                <span>Quick Role Login (Click to fill credentials):</span>
+                <span>Select Role to Fill Username:</span>
               </div>
               <div className="login-demo-pills">
                 {demoAccounts.map((acc) => {

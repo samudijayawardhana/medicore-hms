@@ -93,9 +93,9 @@ export default function AppointmentsView({
         api.getDoctors(),
         api.getPatients()
       ]);
-      setAppointments(apts);
-      setDoctors(docs);
-      setPatients(pts);
+      setAppointments(Array.isArray(apts) ? apts : (apts?.data || []));
+      setDoctors(Array.isArray(docs) ? docs : (docs?.data || []));
+      setPatients(Array.isArray(pts) ? pts : (pts?.data || []));
     } catch (err) {
       console.error(err);
     } finally {

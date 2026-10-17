@@ -89,10 +89,10 @@ export default function LaboratoryView({ activeTab = '' }) {
         api.getPatients(),
         api.getDoctors()
       ]);
-      setOrders(ordList);
-      setTests(testList);
-      setPatients(ptList);
-      setDoctors(docList);
+      setOrders(Array.isArray(ordList) ? ordList : (ordList?.data || []));
+      setTests(Array.isArray(testList) ? testList : (testList?.data || []));
+      setPatients(Array.isArray(ptList) ? ptList : (ptList?.data || []));
+      setDoctors(Array.isArray(docList) ? docList : (docList?.data || []));
     } catch (err) {
       console.error(err);
     } finally {

@@ -62,9 +62,9 @@ export default function AccountantFinanceView({ activeTab = 'accountant-create-b
         api.getPaymentHistory(),
         api.getPatients()
       ]);
-      setBills(bData || []);
-      setPayments(pData || []);
-      setPatients(ptData || []);
+      setBills(Array.isArray(bData) ? bData : (bData?.data || []));
+      setPayments(Array.isArray(pData) ? pData : (pData?.data || []));
+      setPatients(Array.isArray(ptData) ? ptData : (ptData?.data || []));
     } catch (err) {
       console.error('Error loading finance data:', err);
     } finally {

@@ -44,9 +44,9 @@ export default function PrescriptionsView({ currentUser, currentRole = 'Doctor' 
         api.getPatients(),
         api.getPharmacyMedicines()
       ]);
-      setPrescriptions(rxData || []);
-      setPatients(ptData || []);
-      setMedicines(medData || []);
+      setPrescriptions(Array.isArray(rxData) ? rxData : (rxData?.data || []));
+      setPatients(Array.isArray(ptData) ? ptData : (ptData?.data || []));
+      setMedicines(Array.isArray(medData) ? medData : (medData?.data || []));
     } catch (err) {
       console.error('Error loading prescriptions:', err);
     } finally {

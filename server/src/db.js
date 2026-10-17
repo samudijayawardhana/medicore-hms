@@ -1454,29 +1454,61 @@ export const db = {
 
   async createEmployee(emp) {
     const id = (memoryStore.employees?.length || 0) + 1;
+    const empNo = `EMP-00${id}`;
+    const cleanUsername = (emp.username || (emp.full_name ? emp.full_name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 16) : `emp_${id}`)).trim();
+    const tempPassword = emp.temporary_password || emp.temp_password || `Temp@${Math.floor(1000 + Math.random() * 9000)}`;
+
     const newEmp = {
       id,
-      emp_no: `EMP-00${id}`,
+      emp_no: empNo,
       full_name: emp.full_name,
       nic: emp.nic || '198541201923',
-      role: emp.role || 'Staff Member',
+      role: emp.role || 'Nurse',
       department: emp.department || 'General Administration',
       designation: emp.designation || 'Hospital Staff',
       phone: emp.phone || '077-1234567',
-      email: emp.email || `emp${id}@medicore.lk`,
+      email: emp.email || `${cleanUsername}@medicore.lk`,
+      username: cleanUsername,
       join_date: new Date().toISOString().split('T')[0],
       status: 'Active',
       salary_lkr: parseFloat(emp.salary_lkr) || 145000.00
     };
+
     if (!memoryStore.employees) memoryStore.employees = [];
     memoryStore.employees.unshift(newEmp);
+
+    // Create user login account with temporary password
+    let userAccount = null;
+    try {
+      userAccount = await this.createUser({
+        username: cleanUsername,
+        password: tempPassword,
+        full_name: emp.full_name,
+        email: newEmp.email,
+        role: emp.role || 'Nurse',
+        phone: emp.phone,
+        department: emp.department
+      });
+    } catch (userErr) {
+      console.warn('[Staff createEmployee user creation]:', userErr.message);
+    }
+
     this.addAuditLog({
       user: 'HR / Administrator',
       module: 'Staff',
-      action: `Employee registered: ${emp.full_name}`,
-      details: `${newEmp.designation} (${newEmp.department}) added to hospital registry`
+      action: `Employee registered: ${emp.full_name} (${cleanUsername})`,
+      details: `${newEmp.designation} (${newEmp.department}) added. Temp credentials generated.`
     }).catch(() => {});
-    return newEmp;
+
+    return {
+      ...newEmp,
+      login_credentials: {
+        username: cleanUsername,
+        temporary_password: tempPassword,
+        role: newEmp.role,
+        user_id: userAccount?.id || null
+      }
+    };
   },
 
   async clockAttendance(att) {

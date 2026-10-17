@@ -19,7 +19,9 @@ import {
   LogOut,
   Ban,
   CheckCircle2,
-  Users
+  Users,
+  KeyRound,
+  Copy
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -57,8 +59,14 @@ export default function StaffView() {
     designation: 'Staff Nurse',
     phone: '077-',
     email: '',
+    username: '',
+    temporary_password: 'Temp@' + Math.floor(1000 + Math.random() * 9000),
     salary_lkr: 145000
   });
+
+  // Generated Credentials Modal State
+  const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   // Form: Clock In / Attendance
   const [clockForm, setClockForm] = useState({
@@ -116,12 +124,29 @@ export default function StaffView() {
     }
 
     try {
-      await api.createEmployee(formData);
-      setFormSuccess('Hospital employee registered successfully!');
-      setTimeout(() => {
-        setShowAddModal(false);
-        loadData();
-      }, 900);
+      const res = await api.createEmployee(formData);
+      setShowAddModal(false);
+      if (res?.login_credentials) {
+        setCreatedCredentials({
+          full_name: formData.full_name,
+          ...res.login_credentials
+        });
+      } else {
+        setFormSuccess('Hospital employee registered successfully!');
+      }
+      loadData();
+      setFormData({
+        full_name: '',
+        nic: '',
+        role: 'Nurse',
+        department: 'Nursing Services',
+        designation: 'Staff Nurse',
+        phone: '077-',
+        email: '',
+        username: '',
+        temporary_password: 'Temp@' + Math.floor(1000 + Math.random() * 9000),
+        salary_lkr: 145000
+      });
     } catch (err) {
       setFormError(err.message || 'Error adding staff');
     }
@@ -719,6 +744,32 @@ export default function StaffView() {
                     className="input-field"
                   />
                 </div>
+
+                <div className="form-group">
+                  <label className="form-label">Login Username *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. nurse_dilani"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className="input-field"
+                  />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Initial portal username</span>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Temporary Password *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Temp@1234"
+                    value={formData.temporary_password}
+                    onChange={(e) => setFormData({ ...formData, temporary_password: e.target.value })}
+                    className="input-field"
+                  />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Staff can change this anytime via Profile</span>
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
@@ -726,10 +777,83 @@ export default function StaffView() {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Save Employee Profile
+                  Save & Create Login Account
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Employee Registered & Credentials Summary */}
+      {createdCredentials && (
+        <div className="modal-backdrop" onClick={() => setCreatedCredentials(null)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px', width: '90%' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-success)' }}>
+                  <CheckCircle size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', margin: 0 }}>Staff Account Created!</h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>Temporary portal credentials generated</p>
+                </div>
+              </div>
+              <button onClick={() => setCreatedCredentials(null)} className="btn btn-secondary btn-sm" style={{ padding: '6px' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: '24px' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: '1.5' }}>
+                Staff member <strong>{createdCredentials.full_name}</strong> was registered. Share these initial credentials with the employee:
+              </p>
+
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Assigned Role:</span>
+                  <span className="badge badge-info">{createdCredentials.role}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Username:</span>
+                  <strong style={{ fontFamily: 'monospace', fontSize: '0.95rem', color: 'var(--brand-blue)' }}>{createdCredentials.username}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Temporary Password:</span>
+                  <strong style={{ fontFamily: 'monospace', fontSize: '0.95rem', background: '#fef08a', color: '#854d0e', padding: '2px 8px', borderRadius: '4px' }}>
+                    {createdCredentials.temporary_password}
+                  </strong>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '14px', padding: '10px 12px', background: 'rgba(2, 132, 199, 0.08)', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                💡 <strong>Self-Service Password Change:</strong> The employee can log in with this temporary password and change both their password and username anytime under <em>"My Profile"</em> or <em>"Change Password"</em> in the sidebar.
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `MediCore HMS Login Credentials\nUsername: ${createdCredentials.username}\nTemporary Password: ${createdCredentials.temporary_password}\nRole: ${createdCredentials.role}\nPortal: http://localhost:5173`;
+                    navigator.clipboard.writeText(text);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2500);
+                  }}
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {copied ? <Check size={14} style={{ color: 'var(--color-success)' }} /> : <Copy size={14} />}
+                  <span>{copied ? 'Copied to Clipboard!' : 'Copy Credentials'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreatedCredentials(null)}
+                  className="btn btn-primary"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

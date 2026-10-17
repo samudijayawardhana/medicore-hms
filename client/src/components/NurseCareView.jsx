@@ -70,12 +70,12 @@ export default function NurseCareView({ activeTab = 'nurse-patients', currentUse
         api.getMedicationAdministration(),
         api.getAppointments()
       ]);
-      setPatients(ptData || []);
-      setAdmissions(admData || []);
-      setVitals(vtData || []);
-      setNotes(ntData || []);
-      setMedications(medData || []);
-      setAppointments(aptData || []);
+      setPatients(Array.isArray(ptData) ? ptData : (ptData?.data || []));
+      setAdmissions(Array.isArray(admData) ? admData : (admData?.data || []));
+      setVitals(Array.isArray(vtData) ? vtData : (vtData?.data || []));
+      setNotes(Array.isArray(ntData) ? ntData : (ntData?.data || []));
+      setMedications(Array.isArray(medData) ? medData : (medData?.data || []));
+      setAppointments(Array.isArray(aptData) ? aptData : (aptData?.data || []));
     } catch (err) {
       console.error('Error loading nursing data:', err);
     } finally {

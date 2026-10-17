@@ -65,7 +65,6 @@ export default function Sidebar({
     Doctor: [
       { id: 'dashboard', label: 'Dashboard', icon: Home },
       { id: 'doctor-patients', label: 'Patients (View + History)', icon: Users },
-      { id: 'doctors', label: 'Doctors', icon: Stethoscope },
       { id: 'doctor-appointments', label: 'Appointments', icon: CalendarDays },
       { id: 'emr', label: 'EMR (Consultation)', icon: FileText },
       { id: 'prescriptions', label: 'Prescriptions', icon: Pill },

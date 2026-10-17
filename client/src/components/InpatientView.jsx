@@ -46,9 +46,9 @@ export default function InpatientView() {
         api.getPatients(),
         api.getDoctors()
       ]);
-      setAdmissions(admList);
-      setPatients(ptList);
-      setDoctors(docList);
+      setAdmissions(Array.isArray(admList) ? admList : (admList?.data || []));
+      setPatients(Array.isArray(ptList) ? ptList : (ptList?.data || []));
+      setDoctors(Array.isArray(docList) ? docList : (docList?.data || []));
     } catch (err) {
       console.error(err);
     } finally {

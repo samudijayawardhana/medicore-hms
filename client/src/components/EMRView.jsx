@@ -65,10 +65,10 @@ export default function EMRView({ activeAppointment, onPrescriptionCreated }) {
         api.getDoctors(),
         api.getPharmacyMedicines()
       ]);
-      setRecords(recList);
-      setPatients(ptList);
-      setDoctors(docList);
-      setMedicines(medList);
+      setRecords(Array.isArray(recList) ? recList : []);
+      setPatients(Array.isArray(ptList) ? ptList : (ptList?.data || []));
+      setDoctors(Array.isArray(docList) ? docList : (docList?.data || []));
+      setMedicines(Array.isArray(medList) ? medList : (medList?.data || []));
     } catch (err) {
       console.error(err);
     } finally {

@@ -66,8 +66,8 @@ export default function BillingView() {
         api.getBills(),
         api.getPatients()
       ]);
-      setBills(billList);
-      setPatients(ptList);
+      setBills(Array.isArray(billList) ? billList : (billList?.data || []));
+      setPatients(Array.isArray(ptList) ? ptList : (ptList?.data || []));
     } catch (err) {
       console.error(err);
     } finally {

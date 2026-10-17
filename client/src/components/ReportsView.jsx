@@ -56,14 +56,14 @@ export default function ReportsView() {
           api.getBills().catch(() => [])
         ]);
         setSummary(sum);
-        setPatients(pts || []);
-        setAppointments(apts || []);
-        setDoctors(docs || []);
-        setMedicines(meds || []);
-        setLabOrders(labs || []);
-        setEmployees(emps || []);
-        setLeaves(lvs || []);
-        setBills(bll || []);
+        setPatients(Array.isArray(pts) ? pts : (pts?.data || []));
+        setAppointments(Array.isArray(apts) ? apts : (apts?.data || []));
+        setDoctors(Array.isArray(docs) ? docs : (docs?.data || []));
+        setMedicines(Array.isArray(meds) ? meds : (meds?.data || []));
+        setLabOrders(Array.isArray(labs) ? labs : (labs?.data || []));
+        setEmployees(Array.isArray(emps) ? emps : (emps?.data || []));
+        setLeaves(Array.isArray(lvs) ? lvs : (lvs?.data || []));
+        setBills(Array.isArray(bll) ? bll : (bll?.data || []));
       } catch (err) {
         console.error(err);
       } finally {
