@@ -1,0 +1,634 @@
+/* =======================================================
+   MediCore Hospital Welcome Page (Pixel-Perfect Match)
+   ======================================================= */
+
+.hc-welcome-root {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background: #ffffff;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+  color: #1e293b;
+}
+
+[data-theme='dark'] .hc-welcome-root {
+  background: #090e17;
+  color: #f1f5f9;
+}
+
+/* Corner Organic Decorative Waves */
+.hc-wave-corner-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 440px;
+  height: 280px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hc-wave-corner-bottom {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 380px;
+  height: 280px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Top Navigation Bar */
+.hc-welcome-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 44px;
+  z-index: 30;
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .hc-welcome-topbar {
+    position: relative;
+    height: 68px;
+    padding: 0 20px;
+  }
+}
+
+/* Brand Group: Logo Badge + MediCore */
+.hc-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hc-brand-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0057b7 0%, #0284c7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 87, 183, 0.32);
+}
+
+.hc-brand-cross-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.hc-brand-text-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.hc-brand-name {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0057b7;
+}
+
+[data-theme='dark'] .hc-brand-name {
+  color: #ffffff;
+}
+
+.hc-brand-core {
+  color: #0284c7;
+  font-weight: 800;
+}
+
+[data-theme='dark'] .hc-brand-core {
+  color: #38bdf8;
+}
+
+/* Top Right Tagline: Better Care | Smarter Management | Healthier Tomorrow */
+.hc-top-tagline {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
+[data-theme='dark'] .hc-top-tagline {
+  color: #94a3b8;
+}
+
+.hc-top-tagline-sep {
+  color: #cbd5e1;
+  font-weight: 300;
+}
+
+[data-theme='dark'] .hc-top-tagline-sep {
+  color: #475569;
+}
+
+@media (max-width: 900px) {
+  .hc-top-tagline {
+    display: none;
+  }
+}
+
+/* Main Two-Column Stage */
+.hc-stage {
+  flex: 1;
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .hc-stage {
+    flex-direction: column;
+    min-height: auto;
+  }
+}
+
+/* Left Visual Stage: Wide & Clearly Visible Photo with S-Curve Edge */
+.hc-visual-stage {
+  flex: 0 0 52%;
+  width: 52%;
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 5;
+}
+
+@media (max-width: 1024px) {
+  .hc-visual-stage {
+    flex: none;
+    width: 100%;
+    height: 440px;
+  }
+}
+
+/* Photo Stack (Cross-fading slideshow) */
+.hc-photo-stack {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hc-photo-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
+}
+
+.hc-photo-layer.active {
+  opacity: 1;
+  z-index: 2;
+}
+
+.hc-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  transform: scale(1.02);
+  transition: transform 6s ease-out;
+}
+
+.hc-photo-layer.active .hc-photo-img {
+  transform: scale(1);
+}
+
+/* S-Curve SVG Overlay on the right edge */
+.hc-curve-overlay {
+  position: absolute;
+  top: 0;
+  right: -1px;
+  bottom: 0;
+  width: 170px;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hc-curve-accent-fill {
+  fill: rgba(219, 234, 254, 0.78);
+}
+
+[data-theme='dark'] .hc-curve-accent-fill {
+  fill: rgba(14, 165, 233, 0.18);
+}
+
+.hc-curve-primary-fill {
+  fill: #ffffff;
+}
+
+[data-theme='dark'] .hc-curve-primary-fill {
+  fill: #090e17;
+}
+
+/* Subtle Bottom Fade */
+.hc-bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.75) 0%, transparent 100%);
+  z-index: 12;
+  pointer-events: none;
+}
+
+[data-theme='dark'] .hc-bottom-fade {
+  background: linear-gradient(to top, rgba(9, 14, 23, 0.75) 0%, transparent 100%);
+}
+
+/* Floating Bottom-Left Motto Pill: Pulse Line + Heart + "Your Health, Our Priority" */
+.hc-priority-motto {
+  position: absolute;
+  bottom: 28px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 20;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  padding: 8px 18px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='dark'] .hc-priority-motto {
+  background: rgba(9, 14, 23, 0.85);
+  border-color: rgba(30, 41, 59, 0.7);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 1024px) {
+  .hc-priority-motto {
+    bottom: 16px;
+    left: 16px;
+    padding: 6px 14px;
+  }
+}
+
+.hc-priority-ecg-svg {
+  width: 90px;
+  height: 26px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(2, 132, 199, 0.25));
+}
+
+.hc-priority-text {
+  font-size: 0.92rem;
+  font-style: italic;
+  font-weight: 600;
+  color: #334155;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .hc-priority-text {
+  color: #cbd5e1;
+}
+
+/* Floating Photo Meta Bar (Tag + Dots) */
+.hc-photo-meta-bar {
+  position: absolute;
+  top: 96px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 15;
+}
+
+@media (max-width: 1024px) {
+  .hc-photo-meta-bar {
+    top: 20px;
+    left: 20px;
+  }
+}
+
+.hc-photo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  padding: 5px 13px;
+  border-radius: 9999px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: #0057b7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+}
+
+[data-theme='dark'] .hc-photo-badge {
+  background: rgba(15, 23, 42, 0.9);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.hc-sparkle-icon {
+  color: #0284c7;
+}
+
+.hc-slide-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hc-slide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.hc-slide-dot.active {
+  width: 22px;
+  background: #0057b7;
+  box-shadow: 0 0 10px rgba(0, 87, 183, 0.5);
+}
+
+/* Hover Navigation Arrows */
+.hc-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  color: #0f172a;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 18;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.hc-visual-stage:hover .hc-nav-arrow {
+  opacity: 0.9;
+}
+
+.hc-nav-arrow:hover {
+  opacity: 1 !important;
+  background: #ffffff;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.hc-nav-prev {
+  left: 20px;
+}
+
+.hc-nav-next {
+  right: 140px;
+}
+
+@media (max-width: 1024px) {
+  .hc-nav-next {
+    right: 20px;
+  }
+}
+
+/* Right Content Stage */
+.hc-content-stage {
+  flex: 0 0 48%;
+  width: 48%;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 70px 48px 30px 24px;
+}
+
+@media (max-width: 1200px) {
+  .hc-content-stage {
+    padding: 70px 32px 30px 16px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hc-content-stage {
+    flex: none;
+    width: 100%;
+    padding: 32px 20px 60px 20px;
+  }
+}
+
+.hc-hero-box {
+  max-width: 580px;
+  width: 100%;
+}
+
+.hc-welcome-lead {
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: #475569;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+[data-theme='dark'] .hc-welcome-lead {
+  color: #94a3b8;
+}
+
+.hc-hero-title {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+  color: #0057b7;
+  letter-spacing: -0.03em;
+  margin: 0 0 6px 0;
+}
+
+[data-theme='dark'] .hc-hero-title {
+  color: #ffffff;
+}
+
+.hc-title-accent {
+  color: #0284c7;
+}
+
+[data-theme='dark'] .hc-title-accent {
+  color: #38bdf8;
+}
+
+.hc-hero-subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px 0;
+}
+
+[data-theme='dark'] .hc-hero-subtitle {
+  color: #f1f5f9;
+}
+
+.hc-hero-tagline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.925rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+[data-theme='dark'] .hc-hero-tagline {
+  color: #94a3b8;
+}
+
+.hc-bullet-dot {
+  color: #0284c7;
+  font-size: 1.2rem;
+  line-height: 0;
+}
+
+.hc-hero-description {
+  font-size: 1.025rem;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0 0 28px 0;
+}
+
+[data-theme='dark'] .hc-hero-description {
+  color: #cbd5e1;
+}
+
+/* Call-to-Action Button */
+.hc-cta-wrap {
+  margin-bottom: 34px;
+}
+
+.hc-btn-get-started {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: #0057b7;
+  color: #ffffff;
+  padding: 13px 34px;
+  border-radius: 9999px;
+  font-size: 1.025rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 24px rgba(0, 87, 183, 0.32);
+}
+
+.hc-btn-get-started:hover {
+  background: #004694;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 87, 183, 0.42);
+}
+
+.hc-btn-get-started:hover .hc-btn-arrow {
+  transform: translateX(4px);
+}
+
+.hc-btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+/* Horizontal Modules Strip (6 items matching mockup) */
+.hc-modules-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  padding-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .hc-modules-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+}
+
+.hc-module-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.hc-module-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.hc-module-item:hover .hc-module-circle {
+  transform: translateY(-4px) scale(1.08);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+.hc-module-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.775rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #334155;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+[data-theme='dark'] .hc-module-label {
+  color: #cbd5e1;
+}
+
+.hc-module-item:hover .hc-module-label {
+  color: #0057b7;
+}
+
+[data-theme='dark'] .hc-module-item:hover .hc-module-label {
+  color: #38bdf8;
+}
