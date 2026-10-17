@@ -3,6 +3,8 @@
 // Centralized HTTP client connecting React to Node.js / MySQL
 // =======================================================
 
+import { mockService } from './mockService';
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export function getSession() {
@@ -24,26 +26,43 @@ export function getSession() {
 
 async function request(path, options = {}, rawResponse = false) {
   const s = getSession();
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      ...(options.body && !options.headers?.['Content-Type'] ? { 'Content-Type': 'application/json' } : {}),
-      ...(s?.token ? { Authorization: `Bearer ${s.token}` } : {}),
-      ...(options.headers || {})
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        ...(options.body && !options.headers?.['Content-Type'] ? { 'Content-Type': 'application/json' } : {}),
+        ...(s?.token ? { Authorization: `Bearer ${s.token}` } : {}),
+        ...(options.headers || {})
+      }
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
+      if (rawResponse) return res;
+      return res.json();
     }
-  });
-  if (res.status === 401 && s) {
-    localStorage.removeItem('hms_session');
-    localStorage.removeItem('medicore_auth_token');
-    localStorage.removeItem('medicore_user');
-    window.dispatchEvent(new Event('hms-session-expired'));
-  }
-  if (rawResponse) return res;
-  if (!res.ok) {
+
+    if (res.status === 401 && s) {
+      localStorage.removeItem('hms_session');
+      localStorage.removeItem('medicore_auth_token');
+      localStorage.removeItem('medicore_user');
+      window.dispatchEvent(new Event('hms-session-expired'));
+      throw new Error('Session expired');
+    }
+
+    // If server returned 404/500 or non-JSON (like static host without backend):
+    if (res.status === 404 || !contentType.includes('application/json')) {
+      return mockService.handle(path, options, rawResponse);
+    }
+
+    if (rawResponse) return res;
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Request failed');
+  } catch (err) {
+    if (err.message === 'Session expired') throw err;
+    // Network error (offline or server not running on port 5000) -> Seamless Cloud Demo fallback
+    return mockService.handle(path, options, rawResponse);
   }
-  return res.json();
 }
 
 async function authFetch(url, options = {}) {
@@ -98,22 +117,33 @@ export const api = {
   },
 
   async login(username, password) {
-    let res;
     try {
-      res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.token && data.user) {
+          this.setSession(data.token, data.user, data);
+        }
+        return data;
+      }
+      if (res.status === 401) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Invalid credentials');
+      }
+      // If 404 from Vercel static host:
+      return mockService.login(username, password, this);
     } catch (netErr) {
-      throw new Error('Unable to connect to MediCore Backend Server. Please ensure the server is running on port 5000.');
+      if (netErr.message && netErr.message.includes('Invalid credentials')) {
+        throw netErr;
+      }
+      // Server port 5000 unreachable (cloud hosting) -> Seamless Cloud Demo login
+      return mockService.login(username, password, this);
     }
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Login failed. Please check your credentials.');
-    if (data.token && data.user) {
-      this.setSession(data.token, data.user, data);
-    }
-    return data;
   },
 
   async getMe() {
