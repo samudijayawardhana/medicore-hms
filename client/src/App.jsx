@@ -497,14 +497,15 @@ export default function App() {
             <InpatientView />
           )}
 
-          {(currentView === 'nurse-patients' ||
+          {(currentView === 'nurse-care' ||
+            currentView === 'nurse-patients' ||
             currentView === 'patient-care' ||
             currentView === 'vital-signs' ||
             currentView === 'nursing-notes' ||
             currentView === 'medication-admin' ||
             currentView === 'nurse-schedule') && (
             <NurseCareView
-              activeTab={currentView}
+              activeTab={currentView === 'nurse-care' ? 'nurse-patients' : currentView}
               currentUser={currentUser}
             />
           )}

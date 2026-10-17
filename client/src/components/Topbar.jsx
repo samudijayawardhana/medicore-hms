@@ -278,8 +278,10 @@ export default function Topbar({
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => {
-              setShowUserDropdown(!showUserDropdown);
-              setShowNotifications(false);
+              if (currentRole === 'Administrator') {
+                setShowUserDropdown(!showUserDropdown);
+                setShowNotifications(false);
+              }
             }}
             style={{
               display: 'flex',
@@ -289,11 +291,15 @@ export default function Topbar({
               borderRadius: '9999px',
               border: 'none',
               background: 'transparent',
-              cursor: 'pointer',
+              cursor: currentRole === 'Administrator' ? 'pointer' : 'default',
               transition: 'background 0.15s ease'
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onMouseEnter={(e) => {
+              if (currentRole === 'Administrator') e.currentTarget.style.backgroundColor = '#f1f5f9';
+            }}
+            onMouseLeave={(e) => {
+              if (currentRole === 'Administrator') e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             {/* Avatar matching screenshot */}
             <div
@@ -337,8 +343,8 @@ export default function Topbar({
             </div>
           </button>
 
-          {/* User Profile Dropdown Menu */}
-          {showUserDropdown && (
+          {/* User Profile Dropdown Menu - Only rendered for Administrator role */}
+          {currentRole === 'Administrator' && showUserDropdown && (
             <div
               style={{
                 position: 'absolute',
@@ -388,33 +394,6 @@ export default function Topbar({
                 >
                   <Settings size={15} />
                   <span>Admin Profile & Settings</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowUserDropdown(false);
-                    if (onNavigate) onNavigate('users');
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'none',
-                    color: '#334155',
-                    fontSize: '0.8rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <Shield size={15} />
-                  <span>User Management</span>
                 </button>
 
                 <div style={{ height: '1px', background: '#f1f5f9', margin: '4px 0' }} />

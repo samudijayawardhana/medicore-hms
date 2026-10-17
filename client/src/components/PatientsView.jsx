@@ -40,6 +40,34 @@ const EMPTY_FORM = {
 const fmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
 const fmtDate = (d) => (d ? String(d).slice(0, 10) : '—');
 
+export const calculateAge = (dobString) => {
+  if (!dobString) return null;
+  const dob = new Date(dobString);
+  if (isNaN(dob.getTime())) return null;
+  const today = new Date();
+  let years = today.getFullYear() - dob.getFullYear();
+  let months = today.getMonth() - dob.getMonth();
+  let days = today.getDate() - dob.getDate();
+
+  if (days < 0) {
+    months--;
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  if (years < 0) return 'Invalid DOB';
+  if (years === 0) {
+    if (months === 0) {
+      const diffTime = Math.abs(today - dob);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return `${diffDays} Day${diffDays !== 1 ? 's' : ''}`;
+    }
+    return `${months} Month${months !== 1 ? 's' : ''}`;
+  }
+  return `${years} Year${years !== 1 ? 's' : ''}${months > 0 ? ` ${months} mo` : ''}`;
+};
+
 function Field({ label, span, hint, children }) {
   return (
     <div className="form-group" style={span ? { gridColumn: 'span 2' } : undefined}>
@@ -371,6 +399,11 @@ export default function PatientsView({ onSelectPatientForAppointment, initialSea
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                         {p.gender} • DOB: {fmtDate(p.date_of_birth)}
+                        {calculateAge(p.date_of_birth) && (
+                          <span style={{ marginLeft: '6px', fontWeight: '700', color: 'var(--brand-blue)' }}>
+                            • Age: {calculateAge(p.date_of_birth)}
+                          </span>
+                        )}
                       </div>
                     </td>
                     {sees('nic') && (
@@ -474,8 +507,34 @@ export default function PatientsView({ onSelectPatientForAppointment, initialSea
                   </Field>
                 )}
 
-                <Field label="Date of Birth">
-                  <input type="date" {...bind('date_of_birth')} />
+                <Field
+                  label={
+                    <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <span>Date of Birth</span>
+                      {formData.date_of_birth && calculateAge(formData.date_of_birth) && (
+                        <span
+                          className="badge badge-info"
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            padding: '2px 8px',
+                            background: '#e0f2fe',
+                            color: '#0369a1',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          Age: {calculateAge(formData.date_of_birth)}
+                        </span>
+                      )}
+                    </span>
+                  }
+                  hint={formData.date_of_birth ? `Calculated Patient Age: ${calculateAge(formData.date_of_birth)}` : 'Select birthdate to calculate age automatically'}
+                >
+                  <input
+                    type="date"
+                    max={new Date().toISOString().split('T')[0]}
+                    {...bind('date_of_birth')}
+                  />
                 </Field>
 
                 <Field label="Gender">
@@ -566,6 +625,7 @@ export default function PatientsView({ onSelectPatientForAppointment, initialSea
                 </div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '3px 0 0 0' }}>
                   {[
+                    selectedPatient.date_of_birth && `DOB: ${fmtDate(selectedPatient.date_of_birth)}${calculateAge(selectedPatient.date_of_birth) ? ` (${calculateAge(selectedPatient.date_of_birth)})` : ''}`,
                     sees('nic') && selectedPatient.nic && `NIC: ${selectedPatient.nic}`,
                     sees('blood_group') && selectedPatient.blood_group && `Blood: ${selectedPatient.blood_group}`,
                     selectedPatient.phone && `Phone: ${selectedPatient.phone}`

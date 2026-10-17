@@ -84,6 +84,10 @@ export async function runAlignmentMigration() {
     await addColumnIfNotExists('billing_invoices', 'payment_method', 'VARCHAR(50) DEFAULT "Cash"');
     await addColumnIfNotExists('billing_invoices', 'receipt_number', 'VARCHAR(50) NULL');
 
+    // 5b. Align Admissions table
+    console.log('[MediCore Alignment] Aligning admissions table...');
+    await addColumnIfNotExists('admissions', 'daily_rate_lkr', 'DECIMAL(10,2) DEFAULT 3800.00');
+
     // 6. Ensure Leaves table exists
     console.log('[MediCore Alignment] Ensuring staff leaves table exists...');
     await conn.query(`

@@ -39,6 +39,7 @@ export default function AppointmentsView({
 
   // View Mode: Queue List vs Calendar View (PDF Section 7 Specification)
   const [viewMode, setViewMode] = useState('queue'); // 'queue' | 'calendar'
+  const isDoctor = currentRole === 'Doctor';
 
   // Filter States
   const [filterDoctor, setFilterDoctor] = useState(() => {
@@ -241,7 +242,9 @@ export default function AppointmentsView({
             <span className="badge badge-info">{appointments.length} Total</span>
           </div>
           <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Schedule, reschedule, cancel, and track OPD patient queue & calendar (PDF Section 3.4 & 7).
+            {isDoctor
+              ? 'Consultant OPD clinical queue and patient schedule (Doctor View-Only).'
+              : 'Schedule, reschedule, cancel, and track OPD patient queue & calendar (PDF Section 3.4 & 7).'}
           </p>
         </div>
 
@@ -289,22 +292,24 @@ export default function AppointmentsView({
             </button>
           </div>
 
-          <button
-            onClick={() => {
-              setFormData({
-                patient_id: patients[0]?.id || '',
-                doctor_id: doctors[0]?.id || '',
-                appointment_date: selectedDate,
-                time_slot: doctors[0]?.available_time_slot || '04:30 PM - 08:30 PM',
-                reason: 'Consultant Clinical Review'
-              });
-              setShowBookModal(true);
-            }}
-            className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <Plus size={16} /> Schedule Appointment
-          </button>
+          {!isDoctor && (
+            <button
+              onClick={() => {
+                setFormData({
+                  patient_id: patients[0]?.id || '',
+                  doctor_id: doctors[0]?.id || '',
+                  appointment_date: selectedDate,
+                  time_slot: doctors[0]?.available_time_slot || '04:30 PM - 08:30 PM',
+                  reason: 'Consultant Clinical Review'
+                });
+                setShowBookModal(true);
+              }}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Plus size={16} /> Schedule Appointment
+            </button>
+          )}
         </div>
       </div>
 
@@ -619,7 +624,7 @@ export default function AppointmentsView({
                 </button>
 
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  {apt.status !== 'Cancelled' && apt.status !== 'Completed' && (
+                  {!isDoctor && apt.status !== 'Cancelled' && apt.status !== 'Completed' && (
                     <>
                       <button
                         onClick={() => handleOpenReschedule(apt)}

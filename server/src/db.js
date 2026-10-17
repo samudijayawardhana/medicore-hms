@@ -1224,41 +1224,52 @@ export const db = {
 
     if (dbMode === 'mysql' && mysqlPool) {
       try {
-        const [rows] = await mysqlPool.query(`SELECT id, patient_id, admission_date, daily_rate_lkr FROM admissions WHERE id = ?`, [admId]);
+        const [rows] = await mysqlPool.query(`SELECT id, patient_id, admission_date FROM admissions WHERE id = ?`, [admId]);
         await mysqlPool.query(`UPDATE admissions SET status = 'discharged', discharge_date = CURDATE() WHERE id = ?`, [admId]);
 
         if (rows.length > 0) {
           const adm = rows[0];
           // Update patient status
-          await mysqlPool.query(`UPDATE patients SET status = 'Discharged' WHERE id = ?`, [adm.patient_id]);
+          await mysqlPool.query(`UPDATE patients SET status = 'Discharged' WHERE id = ?`, [adm.patient_id]).catch(() => {});
 
-          // Calculate admission days and charges
-          const admDate = adm.admission_date ? new Date(adm.admission_date) : new Date();
-          const diffDays = Math.max(1, Math.round((Date.now() - admDate.getTime()) / (1000 * 60 * 60 * 24)));
-          const dailyRate = parseFloat(adm.daily_rate_lkr) || 3800.00;
-          const admissionTotal = diffDays * dailyRate;
+          // Calculate admission days and charges safely
+          try {
+            const admDate = adm.admission_date ? new Date(adm.admission_date) : new Date();
+            const diffDays = Math.max(1, Math.round((Date.now() - admDate.getTime()) / (1000 * 60 * 60 * 24)));
+            const dailyRate = 3800.00;
+            const admissionTotal = diffDays * dailyRate;
 
-          // Add to patient's bill
-          const [unpaid] = await mysqlPool.query(
-            `SELECT id, admission_charges, total_amount FROM billing_invoices WHERE patient_id = ? AND status != 'paid' ORDER BY id DESC LIMIT 1`,
-            [adm.patient_id]
-          );
-          if (unpaid.length > 0) {
-            const bill = unpaid[0];
-            const newAdmCharges = (parseFloat(bill.admission_charges) || 0) + admissionTotal;
-            const newTotal = (parseFloat(bill.total_amount) || 0) + admissionTotal;
-            await mysqlPool.query(
-              `UPDATE billing_invoices SET admission_charges = ?, total_amount = ? WHERE id = ?`,
-              [newAdmCharges, newTotal, bill.id]
+            // Add to patient's bill
+            const [unpaid] = await mysqlPool.query(
+              `SELECT id, admission_charges, total_amount FROM billing_invoices WHERE patient_id = ? AND status != 'paid' ORDER BY id DESC LIMIT 1`,
+              [adm.patient_id]
             );
-          } else {
-            const invNo = `MC-INV-2026-${Math.floor(100 + Math.random() * 900)}`;
-            await mysqlPool.query(
-              `INSERT INTO billing_invoices (invoice_number, patient_id, admission_charges, total_amount, status, invoice_date)
-               VALUES (?, ?, ?, ?, 'unpaid', CURDATE())`,
-              [invNo, adm.patient_id, admissionTotal, admissionTotal]
-            );
+            if (unpaid.length > 0) {
+              const bill = unpaid[0];
+              const newAdmCharges = (parseFloat(bill.admission_charges) || 0) + admissionTotal;
+              const newTotal = (parseFloat(bill.total_amount) || 0) + admissionTotal;
+              await mysqlPool.query(
+                `UPDATE billing_invoices SET admission_charges = ?, total_amount = ? WHERE id = ?`,
+                [newAdmCharges, newTotal, bill.id]
+              );
+            } else {
+              const invNo = `MC-INV-2026-${Math.floor(100 + Math.random() * 900)}`;
+              await mysqlPool.query(
+                `INSERT INTO billing_invoices (invoice_number, patient_id, admission_charges, total_amount, status, invoice_date)
+                 VALUES (?, ?, ?, ?, 'unpaid', CURDATE())`,
+                [invNo, adm.patient_id, admissionTotal, admissionTotal]
+              );
+            }
+          } catch (billingErr) {
+            console.warn('[Billing on Discharge Notice]:', billingErr.message);
           }
+        }
+
+        // Also keep memoryStore synchronized if present
+        const memAdm = memoryStore.inpatient_admissions?.find(a => a.id === admId);
+        if (memAdm) {
+          memAdm.status = 'Discharged';
+          memAdm.discharge_date = new Date().toISOString().split('T')[0];
         }
 
         this.addAuditLog({

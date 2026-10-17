@@ -82,7 +82,7 @@ export const ROLE_PROFILES = {
       'emr:view',
       'lab:view', 'lab:request', 'lab:sample',
       'pharmacy:view', 'prescription:view',
-      'inpatient:view',
+      'inpatient:view', 'inpatient:admit', 'inpatient:discharge',
       'nurse:view', 'nurse:write',
       'dashboard:role', 'profile:edit'
     ],
@@ -97,7 +97,7 @@ export const ROLE_PROFILES = {
       'document:view', 'document:upload',
       'doctor:view',
       'appointment:view', 'appointment:book', 'appointment:status',
-      'inpatient:view', 'inpatient:admit',
+      'inpatient:view', 'inpatient:admit', 'inpatient:discharge',
       'dashboard:role', 'profile:edit'
     ],
     IDENTITY_CONTACT,

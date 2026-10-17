@@ -27,6 +27,8 @@ export default function InpatientView() {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dischargingId, setDischargingId] = useState(null);
+  const [alertMsg, setAlertMsg] = useState({ text: '', type: '' });
 
   const [showAdmitModal, setShowAdmitModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -37,6 +39,11 @@ export default function InpatientView() {
     reason: 'Clinical observation & IV hydration therapy',
     daily_rate_lkr: 3800.00
   });
+
+  const showAlert = (text, type = 'success') => {
+    setAlertMsg({ text, type });
+    setTimeout(() => setAlertMsg({ text: '', type: '' }), 4000);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -61,12 +68,16 @@ export default function InpatientView() {
   }, []);
 
   const handleDischarge = async (id) => {
-    if (!window.confirm('Are you sure you want to discharge this patient?')) return;
+    if (!window.confirm('Are you sure you want to discharge this patient? This will release the allocated bed.')) return;
+    setDischargingId(id);
     try {
       await api.dischargePatient(id);
+      showAlert('Patient discharged successfully! Bed released and marked as Discharged.', 'success');
       loadData();
     } catch (err) {
-      alert(err.message || 'Error discharging patient');
+      showAlert(err.message || 'Error discharging patient', 'error');
+    } finally {
+      setDischargingId(null);
     }
   };
 
@@ -117,6 +128,24 @@ export default function InpatientView() {
           <Plus size={16} /> Admit Patient to Ward
         </button>
       </div>
+
+      {/* Notification banner */}
+      {alertMsg.text && (
+        <div style={{
+          padding: '12px 18px',
+          borderRadius: '10px',
+          backgroundColor: alertMsg.type === 'error' ? '#fef2f2' : '#f0fdf4',
+          color: alertMsg.type === 'error' ? '#991b1b' : '#166534',
+          border: `1px solid ${alertMsg.type === 'error' ? '#fecaca' : '#bbf7d0'}`,
+          fontSize: '0.9rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          {alertMsg.text}
+        </div>
+      )}
 
       {/* Ward Status Overview Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
@@ -206,9 +235,10 @@ export default function InpatientView() {
                         <button
                           onClick={() => handleDischarge(adm.id)}
                           className="btn btn-secondary btn-sm"
+                          disabled={dischargingId === adm.id}
                           title="Process Hospital Discharge"
                         >
-                          <LogOut size={13} /> Discharge
+                          <LogOut size={13} /> {dischargingId === adm.id ? 'Discharging...' : 'Discharge'}
                         </button>
                       )}
                     </td>

@@ -21,7 +21,8 @@ import {
 import { api } from '../services/api';
 
 export default function NurseCareView({ activeTab = 'nurse-patients', currentUser }) {
-  const [currentTab, setCurrentTab] = useState(activeTab);
+  const normalizeTab = (tab) => (!tab || tab === 'nurse-care' ? 'nurse-patients' : tab);
+  const [currentTab, setCurrentTab] = useState(() => normalizeTab(activeTab));
   const [patients, setPatients] = useState([]);
   const [admissions, setAdmissions] = useState([]);
   const [vitals, setVitals] = useState([]);
@@ -56,7 +57,7 @@ export default function NurseCareView({ activeTab = 'nurse-patients', currentUse
   });
 
   useEffect(() => {
-    setCurrentTab(activeTab);
+    setCurrentTab(normalizeTab(activeTab));
   }, [activeTab]);
 
   const loadData = async () => {
