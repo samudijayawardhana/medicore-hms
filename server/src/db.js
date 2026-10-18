@@ -677,7 +677,23 @@ export const db = {
         console.warn('[DB Appointments Query Error]:', err.message);
       }
     }
-    return memoryStore.appointments;
+    let list = (memoryStore.appointments || []).map(a => {
+      const pt = memoryStore.patients?.find(p => p.id === a.patient_id);
+      const doc = memoryStore.doctors?.find(d => d.id === a.doctor_id);
+      return {
+        ...a,
+        patient_name: a.patient_name || pt?.full_name || 'Sri Lankan Patient',
+        patient_nic: a.patient_nic || pt?.nic || '',
+        patient_phone: a.patient_phone || pt?.phone || '',
+        doctor_name: a.doctor_name || doc?.full_name || 'Dr. Consultant',
+        doctor_specialization: a.doctor_specialization || doc?.specialization || 'Specialist',
+        doctor_room: a.doctor_room || doc?.room_number || 'Room 101'
+      };
+    });
+    if (date) list = list.filter(a => a.appointment_date === date);
+    if (doctor_id) list = list.filter(a => a.doctor_id === parseInt(doctor_id));
+    if (status && status !== 'All') list = list.filter(a => a.status === status);
+    return list;
   },
 
   async insertAppointment(apt, actor = null) {
