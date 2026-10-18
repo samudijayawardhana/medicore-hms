@@ -56,6 +56,9 @@ export async function initDatabase() {
     console.log(`[MediCore DB] SUCCESS: Connected to MySQL database "${database}"`);
     conn.release();
 
+    // Auto-bootstrap cloud tables and default users if first time on TiDB / cloud MySQL
+    await ensureCloudTablesAndSeed(mysqlPool);
+
     dbMode = 'mysql';
     dbStatusMessage = `Connected to MySQL (${database} @ ${host}:${port})`;
     return { success: true, mode: 'mysql' };
@@ -64,6 +67,190 @@ export async function initDatabase() {
     dbMode = 'memory';
     dbStatusMessage = `Local Fallback Active (${err.message})`;
     return { success: true, mode: 'memory' };
+  }
+}
+
+async function ensureCloudTablesAndSeed(pool) {
+  try {
+    // 1. Roles table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS roles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(50) NOT NULL UNIQUE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await pool.query(`
+      INSERT IGNORE INTO roles (id, name) VALUES 
+      (1, 'Administrator'),
+      (2, 'Doctor'),
+      (3, 'Nurse'),
+      (4, 'Receptionist'),
+      (5, 'Laboratory Staff'),
+      (6, 'Pharmacist'),
+      (7, 'Accountant');
+    `);
+
+    // 2. Departments table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS departments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await pool.query(`
+      INSERT IGNORE INTO departments (id, name) VALUES 
+      (1, 'General Medicine'),
+      (2, 'Cardiology'),
+      (3, 'Pediatrics'),
+      (4, 'Gynecology & Obstetrics'),
+      (5, 'Orthopedics'),
+      (6, 'Inpatient Ward'),
+      (7, 'Laboratory'),
+      (8, 'Pharmacy');
+    `);
+
+    // 3. Users table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(120) NOT NULL,
+        email VARCHAR(120) NOT NULL,
+        role_id INT NOT NULL,
+        status VARCHAR(30) DEFAULT 'active',
+        last_login DATETIME NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // Seed default users if users table has no rows
+    const [userCount] = await pool.query('SELECT COUNT(*) as c FROM users');
+    if (userCount[0].c === 0) {
+      const hash = await bcrypt.hash('password123', 10);
+      const defaultUsers = [
+        ['admin', hash, 'Dr. Asela Wickramasinghe', 'director@medicore.lk', 1, 'active'],
+        ['doctor', hash, 'Dr. Rohan Samarasinghe', 'rohan.s@medicore.lk', 2, 'active'],
+        ['dr.rohan', hash, 'Dr. Rohan Samarasinghe', 'rohan.samarasinghe@medicore.lk', 2, 'active'],
+        ['dr.nirosha', hash, 'Dr. Nirosha Perera', 'nirosha.p@medicore.lk', 2, 'active'],
+        ['nurse', hash, 'Nursing Sister Anoma Bandara', 'anoma.b@medicore.lk', 3, 'active'],
+        ['nurse.anoma', hash, 'Nursing Sister Anoma Bandara', 'anoma.bandara@medicore.lk', 3, 'active'],
+        ['receptionist', hash, 'Kavindi Ranasinghe', 'channelling@medicore.lk', 4, 'active'],
+        ['reception', hash, 'Kavindi Ranasinghe', 'channelling.desk@medicore.lk', 4, 'active'],
+        ['lab', hash, 'Kamal Priyadharshana', 'lab@medicore.lk', 5, 'active'],
+        ['lab.kamal', hash, 'Kamal Priyadharshana', 'kamal.p@medicore.lk', 5, 'active'],
+        ['pharmacist', hash, 'Nimal Dissanayake (R.Ph)', 'pharmacy@medicore.lk', 6, 'active'],
+        ['pharma.nimal', hash, 'Nimal Dissanayake (R.Ph)', 'nimal.d@medicore.lk', 6, 'active'],
+        ['accountant', hash, 'Sachini Gamage (CA)', 'finance@medicore.lk', 7, 'active'],
+        ['accounts', hash, 'Sachini Gamage (CA)', 'accounts@medicore.lk', 7, 'active']
+      ];
+
+      for (const u of defaultUsers) {
+        await pool.query(
+          `INSERT IGNORE INTO users (username, password_hash, name, email, role_id, status) VALUES (?, ?, ?, ?, ?, ?)`,
+          u
+        ).catch(() => {});
+      }
+    }
+
+    // 4. Patients table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS patients (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        patient_no VARCHAR(50) NOT NULL UNIQUE,
+        patient_code VARCHAR(50) NULL,
+        first_name VARCHAR(100) NULL,
+        last_name VARCHAR(100) NULL,
+        full_name VARCHAR(200) NOT NULL,
+        nic VARCHAR(30) NULL,
+        date_of_birth DATE NULL,
+        dob DATE NULL,
+        gender VARCHAR(20) DEFAULT 'Other',
+        blood_group VARCHAR(10) NULL,
+        phone VARCHAR(30) NULL,
+        email VARCHAR(100) NULL,
+        address TEXT NULL,
+        district VARCHAR(50) DEFAULT 'Colombo',
+        emergency_contact_name VARCHAR(100) NULL,
+        emergency_contact_phone VARCHAR(30) NULL,
+        emergency_contact_relationship VARCHAR(50) DEFAULT 'Family',
+        allergies TEXT NULL,
+        medical_notes TEXT NULL,
+        status VARCHAR(30) DEFAULT 'Active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 5. Doctors table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS doctors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
+        department_id INT DEFAULT 1,
+        full_name VARCHAR(120) NULL,
+        slmc_reg_no VARCHAR(30) NULL,
+        specialization VARCHAR(100) DEFAULT 'General Medicine',
+        license_number VARCHAR(50) NULL,
+        consultation_fee DECIMAL(10,2) DEFAULT 3000.00,
+        room_number VARCHAR(50) DEFAULT 'Room 101',
+        status VARCHAR(30) DEFAULT 'Active'
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 6. Appointments table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS appointments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        appointment_no VARCHAR(50) NOT NULL UNIQUE,
+        patient_id INT NOT NULL,
+        doctor_id INT NOT NULL,
+        department_id INT DEFAULT 1,
+        appointment_date DATE NOT NULL,
+        time_slot VARCHAR(50) DEFAULT '04:30 PM - 05:00 PM',
+        token_number INT DEFAULT 1,
+        status VARCHAR(30) DEFAULT 'Scheduled',
+        fee DECIMAL(10,2) DEFAULT 3000.00,
+        notes TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // Seed patients if empty
+    const [pts] = await pool.query('SELECT COUNT(*) as c FROM patients');
+    if (pts[0].c === 0) {
+      for (const p of (initialData.patients || [])) {
+        await pool.query(`
+          INSERT IGNORE INTO patients (id, patient_no, patient_code, full_name, nic, date_of_birth, dob, gender, blood_group, phone, email, address, district, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, allergies, medical_notes, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+        `, [p.id, p.patient_no, p.patient_code || p.patient_no, p.full_name, p.nic, p.date_of_birth || p.dob, p.dob || p.date_of_birth, p.gender, p.blood_group, p.phone, p.email, p.address, p.district, p.emergency_contact_name, p.emergency_contact_phone, p.emergency_contact_relationship || 'Family', p.allergies, p.medical_notes, p.status || 'Active']).catch(() => {});
+      }
+    }
+
+    // Seed doctors if empty
+    const [docs] = await pool.query('SELECT COUNT(*) as c FROM doctors');
+    if (docs[0].c === 0) {
+      for (const d of (initialData.doctors || [])) {
+        await pool.query(`
+          INSERT IGNORE INTO doctors (id, user_id, department_id, full_name, slmc_reg_no, license_number, specialization, consultation_fee, room_number, status)
+          VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, 'Active')
+        `, [d.id, d.id, d.full_name, d.slmc_reg_no, d.slmc_reg_no, d.specialization, d.consultation_fee, d.room_number]).catch(() => {});
+      }
+    }
+
+    // Seed appointments if empty
+    const [apts] = await pool.query('SELECT COUNT(*) as c FROM appointments');
+    if (apts[0].c === 0) {
+      for (const a of (initialData.appointments || [])) {
+        await pool.query(`
+          INSERT IGNORE INTO appointments (id, appointment_no, patient_id, doctor_id, department_id, appointment_date, time_slot, token_number, status, fee, notes)
+          VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
+        `, [a.id, a.appointment_no, a.patient_id, a.doctor_id, a.appointment_date, a.time_slot, a.token_number, a.status, a.fee, a.reason]).catch(() => {});
+      }
+    }
+  } catch (bootstrapErr) {
+    console.warn('[MediCore DB Bootstrap Warning]:', bootstrapErr.message);
   }
 }
 
@@ -88,60 +275,79 @@ export const db = {
       throw new Error('Username/Email and password are required.');
     }
     const cleanInput = loginInput.trim().toLowerCase();
+    const aliasMap = {
+      doctor: 'dr.rohan',
+      nurse: 'nurse.anoma',
+      receptionist: 'reception',
+      lab: 'lab.kamal',
+      pharmacist: 'pharma.nimal',
+      accountant: 'accounts'
+    };
+    const resolvedInput = aliasMap[cleanInput] || cleanInput;
 
     if (dbMode === 'mysql' && mysqlPool) {
       try {
         const query = `
-          SELECT u.id, u.username, u.name as full_name, u.email, u.password_hash, u.status, r.name as role
+          SELECT u.id, u.username, COALESCE(u.name, u.full_name, 'Staff Member') as full_name, u.email, u.password_hash, u.status, COALESCE(r.name, u.role, 'Administrator') as role
           FROM users u
-          JOIN roles r ON u.role_id = r.id
-          WHERE (LOWER(u.email) = ? OR LOWER(COALESCE(u.username, '')) = ?)
+          LEFT JOIN roles r ON u.role_id = r.id
+          WHERE (LOWER(u.email) = ? OR LOWER(COALESCE(u.username, '')) = ? OR LOWER(COALESCE(u.username, '')) = ?)
           LIMIT 1
         `;
-        const [rows] = await mysqlPool.query(query, [cleanInput, cleanInput]);
-        if (rows.length === 0) {
-          return null;
-        }
-        const user = rows[0];
-        if (user.status && user.status.toLowerCase() !== 'active') {
-          return { is_disabled: true, message: 'Account is deactivated. Please contact the administrator.' };
-        }
+        const [rows] = await mysqlPool.query(query, [resolvedInput, resolvedInput, cleanInput]);
+        if (rows.length > 0) {
+          const user = rows[0];
+          if (user.status && user.status.toLowerCase() !== 'active') {
+            return { is_disabled: true, message: 'Account is deactivated. Please contact the administrator.' };
+          }
 
-        let isMatch = false;
-        try {
-          isMatch = await bcrypt.compare(password, user.password_hash);
-        } catch (e) {
-          isMatch = false;
-        }
+          let isMatch = false;
+          try {
+            isMatch = await bcrypt.compare(password, user.password_hash);
+          } catch (e) {
+            isMatch = false;
+          }
 
-        if (!isMatch) {
-          if (password === 'password123' || password === 'admin123') {
-            isMatch = true;
+          if (!isMatch) {
+            if (password === 'password123' || password === 'admin123') {
+              isMatch = true;
+            }
+          }
+
+          if (isMatch) {
+            try {
+              await mysqlPool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+            } catch (e) {}
+
+            return {
+              id: user.id,
+              username: user.username || user.email.split('@')[0],
+              full_name: user.full_name,
+              email: user.email,
+              role: user.role,
+              department: user.role === 'Doctor' ? 'Clinical Medicine' : user.role === 'Nurse' ? 'Inpatient Ward' : 'Hospital Operations'
+            };
           }
         }
-
-        if (!isMatch) return null;
-
-        try {
-          await mysqlPool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
-        } catch (e) {}
-
-        return {
-          id: user.id,
-          username: user.username || user.email.split('@')[0],
-          full_name: user.full_name,
-          email: user.email,
-          role: user.role,
-          department: user.role === 'Doctor' ? 'Clinical Medicine' : user.role === 'Nurse' ? 'Inpatient Ward' : 'Hospital Operations'
-        };
       } catch (err) {
         console.error('[DB Auth Error]:', err.message);
       }
     }
 
-    // In-memory fallback
+    // In-memory fallback (supports demo aliases and password123/admin123)
     const memoryUser = memoryStore.users?.find(
-      u => (u.username?.toLowerCase() === cleanInput || u.email?.toLowerCase() === cleanInput)
+      u => (
+        u.username?.toLowerCase() === cleanInput ||
+        u.username?.toLowerCase() === resolvedInput ||
+        u.email?.toLowerCase() === cleanInput ||
+        u.role?.toLowerCase() === cleanInput ||
+        (cleanInput === 'doctor' && u.role === 'Doctor') ||
+        (cleanInput === 'nurse' && u.role === 'Nurse') ||
+        (cleanInput === 'receptionist' && u.role === 'Receptionist') ||
+        (cleanInput === 'lab' && u.role === 'Laboratory Staff') ||
+        (cleanInput === 'pharmacist' && u.role === 'Pharmacist') ||
+        (cleanInput === 'accountant' && u.role === 'Accountant')
+      )
     );
     if (!memoryUser) return null;
     if (memoryUser.status && memoryUser.status.toLowerCase() !== 'active') {
@@ -164,9 +370,9 @@ export const db = {
     if (dbMode === 'mysql' && mysqlPool) {
       try {
         const query = `
-          SELECT u.id, u.username, u.name as full_name, u.email, u.status, r.name as role
+          SELECT u.id, u.username, COALESCE(u.name, u.full_name, 'Staff Member') as full_name, u.email, u.status, COALESCE(r.name, u.role, 'Administrator') as role
           FROM users u
-          JOIN roles r ON u.role_id = r.id
+          LEFT JOIN roles r ON u.role_id = r.id
           WHERE u.id = ? AND u.status = 'active'
           LIMIT 1
         `;
